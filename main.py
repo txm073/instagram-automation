@@ -1,7 +1,8 @@
 import requests
 
 def runcmd(command):
-    resp = requests.post("http://localhost:5000/service", data={"auth": "0b845a09dd890f71bd8f6ae99a74573f", "command": command})
+    resp = requests.post("https://ig-api-proxy.herokuapp.com/service", data={"auth": "0b845a09dd890f71bd8f6ae99a74573f", "command": command})
+    print(resp.json())
     if resp.json().get("status", "error") == "success":
         print(str(resp.json()["output"]))
 
