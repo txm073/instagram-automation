@@ -12,8 +12,13 @@ def service():
     cmd = request.form.get("command", None)
     if cmd is None:
         return jsonify({"status": "error", "reason": "no command provided"})
+    #binary = os.path.join(os.getcwd(), "api.exe")
+    #print(f"Invoking executable {binary!r} with command: {cmd}")
+    #proc = subprocess.Popen([binary, cmd], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout = api.execute(cmd)
-    return jsonify({"status": "success", "output": stdout})
+    #stdout = proc.stdout.read().decode()
+    #stderr = proc.stderr.read().decode()
+    return jsonify({"status": "success", "stdout": stdout})
 
 
 if __name__ == "__main__" and "--local" in sys.argv:

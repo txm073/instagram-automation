@@ -50,7 +50,7 @@ def execute(cmd: str) -> str:
     try:
         method, args = cmd.split(":", maxsplit=1)
         fn = getattr(client, method)
-        literal_args = eval("[" + args + "]")
+        literal_args = [eval('"' + arg.strip() + '"') for arg in args.split(",")]
         print("Running function:", fn, "with args:", literal_args)
         result = fn(*literal_args)
         return str(result)
