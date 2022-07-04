@@ -20,6 +20,10 @@ def service():
     #stderr = proc.stderr.read().decode()
     return jsonify({"status": "success", "stdout": stdout})
 
+@app.route("/", methods=["GET"])
+def index():
+    return "<h1>Hello World!</h1>"
+
 
 if __name__ == "__main__" and "--local" in sys.argv:
     app.run(debug=True, port=9102)
