@@ -1,3 +1,10 @@
+"""
+Google Colab cannot access the Instagram API directly therefore
+https://instagram-automation-sand.vercel.app/service acts as a proxy server
+and forwards a command (in a JSON format) to the InstagramAPI class found in ./api.py
+which will return a JSON response to the proxy server and back to the user
+"""
+
 from flask import Flask, request, url_for, jsonify
 import os, sys
 import api
@@ -6,19 +13,15 @@ app = Flask(__name__)
 
 @app.route("/service", methods=["POST"])
 def service():
+    """Service endpoint to forward directly to the Instagram API"""
     auth = request.form.get("auth", None)
     if auth != os.getenv("AUTH_KEY"):
         return jsonify({"status": "error", "reason": "bad authorisation"})
     cmd = request.form.get("command", None)
     if cmd is None:
         return jsonify({"status": "error", "reason": "no command provided"})
-    #binary = os.path.join(os.getcwd(), "api.exe")
-    #print(f"Invoking executable {binary!r} with command: {cmd}")
-    #proc = subprocess.Popen([binary, cmd], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stdout = api.execute(cmd)
-    #stdout = proc.stdout.read().decode()
-    #stderr = proc.stderr.read().decode()
-    return jsonify({"status": "success", "stdout": stdout})
+    resp = api.execute(cmd)
+    return jsonify({"status": "success", "api-response": resp})
 
 @app.route("/", methods=["GET"])
 def index():
