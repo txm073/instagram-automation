@@ -22,4 +22,4 @@ def service():
 
 
 if __name__ == "__main__" and "--local" in sys.argv:
-    app.run(debug=True)
+    app.run(debug=True, port=9102)
