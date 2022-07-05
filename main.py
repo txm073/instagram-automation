@@ -4,7 +4,7 @@ import sys
 if __name__ == "__main__" and "--local" in sys.argv:
     username = input("Enter username: ")
     pwd = input("Enter password: ")
-    resp = api.execute_via_proxy({"function": "login", "kwargs": {"username": username, "pwd": pwd}}, localhost=True)
+    resp = api.execute_via_proxy({"function": "login", "kwargs": {"username": username, "pwd": pwd}}, localhost=False)
     if resp["status"] == "error":
         print(resp["reason"])
     print(resp)
