@@ -2,6 +2,7 @@ import json
 import os, sys
 import logging
 import warnings
+import traceback
 from typing import (
     List, 
     Tuple, 
@@ -134,7 +135,8 @@ def execute(command: Dict[str, Any]) -> Dict[str, Any]:
         return {"status": "error", "reason": f"function {command['function']!r} not found"}
     
     except Exception as e:
-        return {"status": "error", "reason": f"{e.__class__.__name__}: {e}"}
+        tb = traceback.format_exc()
+        return {"status": "error", "reason": tb}
 
 def execute_via_proxy(command: Dict[str, Any]) -> Dict[str, Any]:
     proxyurl = "https://instagram-automation-sand.vercel.app/service"
