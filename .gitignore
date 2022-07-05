@@ -5,3 +5,4 @@ build/*
 *.spec
 .vercel
 .env
+cache.json

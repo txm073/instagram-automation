@@ -5,13 +5,13 @@ and forwards a command (in a JSON format) to the InstagramAPI class found in ./a
 which will return a JSON response to the proxy server and back to the user
 """
 
-from flask import Flask, request, url_for, jsonify
+from flask import Flask, request, jsonify
 import os, sys
 import api
 
 app = Flask(__name__)
 
-@app.route("/service", methods=["POST"])
+@app.route("/service", methods=["GET", "POST"])
 def service():
     """Service endpoint to forward directly to the Instagram API"""
     auth = request.json.get("auth", None)

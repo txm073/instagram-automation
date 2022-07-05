@@ -2,15 +2,20 @@ import json
 import os, sys
 import logging
 import warnings
+from pprint import pprint
 from typing import (
     List, 
     Tuple, 
     Dict, 
     Any, 
-    Callable
+    Callable,
+    TypeVar,
+    Union,
+    NoReturn
 )
 from instagrapi import Client
 from instagrapi.types import User, UserShort
+from pydantic import BaseModel
 from dotenv import load_dotenv
 import requests
 
@@ -18,7 +23,7 @@ load_dotenv()
 logging.getLogger("instagrapi").disabled = True
 logging.getLogger("public_request").disabled = True
 warnings.warn(
-    "Use of the Instagram v1 mobile API is not recommended as the API is deprecated",
+    "use of the Instagram v1 mobile API is not recommended as it is deprecated",
     DeprecationWarning
 )
 
@@ -31,9 +36,9 @@ def _is_builtin_type(obj: Any) -> bool:
         bytes, slice, range, list, dict, set, type, super, staticmethod, classmethod
     ))
 
-def api_func(funcname: str, json_response: bool = True) -> Callable:
+def api_func(funcname: str, jsonify: bool = True) -> Callable:
     def wrapper(fn) -> Callable:
-        funcmap[funcname] = (fn, json_response)
+        funcmap[funcname] = (fn, jsonify)
         def inner(*args, **kwargs) -> Any:
             result = fn(*args, **kwargs)
             return result
@@ -44,12 +49,21 @@ def api_func(funcname: str, json_response: bool = True) -> Callable:
 class InstagramAPI(Client):
     _inst: type = None
     _uid_cache: Dict[str, str] = {}
+    _auth_user: str = None
+    _default_attribute = type("DefaultAttribute", (), {})
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args, **kwargs) -> Any:
         """Method override to ensure that only one instance of the class is created"""
         if cls._inst is None:
             cls._inst = super(InstagramAPI, cls).__new__(cls, *args, **kwargs)
         return cls._inst
+
+    def __init__(self, *args, **kwargs) -> NoReturn:
+        """Create user information cache file if it does not exist"""
+        if not os.path.exists("cache.json"):
+            with open("cache.json", "w") as f:
+                json.dump({"users": []}, f)
+        super(InstagramAPI, self).__init__(*args, **kwargs)
 
     def get_uid(self, username: str) -> str:
         """Returns the ID of a specific user"""
@@ -59,57 +73,92 @@ class InstagramAPI(Client):
         self._uid_cache[username] = uid
         return uid
 
+    def _cache(self, obj: Dict[str, Any]) -> None:
+        if os.path.exists("cache.json"):
+            with open("cache.json", "r") as f:
+                contents = json.load(f)
+        else:
+            contents = {"users": []}
+        contents["users"].append(obj)
+        with open("cache.json", "w") as f:
+            json.dump(contents, f, indent=2)
+
+    def _lookup(self, value, by="uid") -> Union[None, Dict[str, Any]]:
+        if not os.path.exists("cache.json"):
+            return None
+        with open("cache.json", "r") as f:
+            contents = json.load(f)
+        by = by.replace("uid", "pk")
+        for user in contents["users"]:
+            if user.get(by) == value:
+                return user
+        return None
+
     @api_func("following")
-    def get_following(self, username: str) -> List[UserShort]:
+    def get_following_chunk(self, username: str, amount: int, maxid: str) -> Tuple[str, List[UserShort]]:
         """Get all the users that a specific user is following"""
         uid = self.get_uid(username)
-        users = super(InstagramAPI, self).user_following(uid).values()
-        return users
+        users, max_id = super(InstagramAPI, self).user_following_v1(uid, amount, maxid)
+        return [max_id, list(users.values())]
 
     @api_func("followers")
-    def get_followers(self, username: str) -> List[UserShort]:
+    def get_followers_chunk(self, username: str, amount: int, maxid: str) -> Tuple[str, List[UserShort]]:
         """Get all the followers of a specific user"""
         uid = self.get_uid(username)
-        users = super(InstagramAPI, self).user_followers(uid).values()
-        return users
+        users, max_id = super(InstagramAPI, self).user_followers_v1_chunk(uid, amount, maxid)
+        return [max_id, users]
 
-    @api_func("userinfo")
-    def get_userinfo(self, username: str) -> User:
+    @api_func("userinfo", jsonify=False)
+    def get_userinfo(self, username: str) -> Dict[str, Any]:
         """Gets information about a user"""
+        cached = self._lookup(username, by="username")
+        if cached:
+            return cached
         uid = self.get_uid(username)
-        return super(InstagramAPI, self).user_info(uid)
+        info = self.as_json(super(InstagramAPI, self).user_info(uid))
 
-    @api_func("login", json_response=False)
+        self._cache(info)
+        return info
+
+    @api_func("login", jsonify=False)
     def login(self, username: str, pwd: str) -> Tuple[int, str]:
         """Authenticate using the Instagram v1 mobile API"""
         try:
-            status = super(InstagramAPI, self).login(username, pwd)
+            status = super(InstagramAPI, self).login(username, pwd, True)
         except Exception as e:
             return 1, str(e)
+        self._auth_user = username
         return 0, "success"
 
-    def as_json(self, obj: Any, fields: List[str] = None) -> Dict[str, Any]:
+    def as_json(self, obj: Any, fields: List[str] = None, rlevel: int = 0) -> Dict[str, Any]:
         """Form a JSON response to be returned through the proxy server"""
-        data = {}
-        if obj is None:
+        if isinstance(obj, (set, tuple)):
+            obj = list(obj)
+        if isinstance(obj, dict):
+            for key, value in obj.items():
+                obj[key] = self.as_json(value, fields=fields if not rlevel else None, rlevel=rlevel + 1)    
+        elif isinstance(obj, list):
+            for i in range(len(obj)):
+                obj[i] = self.as_json(obj[i], fields=fields if not rlevel else None, rlevel=rlevel + 1)
+        if not hasattr(obj, "__dict__"):
             return obj
+
+        result = {}
         if fields is None:
-            fields = []
-            for attr in dir(obj):
-                try:
-                    value = getattr(obj, attr)
-                except AttributeError:
+            fields = obj.__dict__.items()
+        else:
+            values = []
+            for f in fields:
+                val = getattr(obj, f, self._default_attribute())
+                if isinstance(val, self._default_attribute): # attribute does not exist
                     continue
-                if type(value) == type(obj) or isinstance(obj, int): # prevent infinite recursion
-                    continue
-                if not callable(value) and not attr.startswith("_"):
-                    fields.append(attr)
-        if not fields:
-            return obj
-        for field in fields:
-            value = getattr(obj, field, None)
-            data[field] = self.as_json(value, fields=None)
-        return data
+                values.append(val)
+            fields = zip(fields, values)
+        for key, val in fields:
+            if key.startswith("_") or callable(val):
+                continue
+            result[key] = self.as_json(val, rlevel=rlevel + 1)
+        return result
 
 
 client = InstagramAPI()
@@ -122,9 +171,12 @@ def execute(command: Dict[str, Any]) -> Dict[str, Any]:
         kwargs["self"] = client
         result = func(**kwargs)
         if do_json:
+            result = {"response": result}
             result = client.as_json(result, command.get("fields"))
             result["status"] = "success"
             return result
+        if isinstance(result, dict):
+            return {"status": "success", "response": result}
         return {"status": "success", "raw": str(result), "response": {}}
 
     except KeyError:
