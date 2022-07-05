@@ -14,10 +14,10 @@ app = Flask(__name__)
 @app.route("/service", methods=["POST"])
 def service():
     """Service endpoint to forward directly to the Instagram API"""
-    auth = request.form.get("auth", None)
+    auth = request.json.get("auth", None)
     if auth != os.getenv("PROXYSERVER_AUTH_KEY"):
         return jsonify({"status": "error", "reason": "bad authorisation"})
-    cmd = request.form.get("command", None)
+    cmd = request.json.get("command", None)
     if cmd is None:
         return jsonify({"status": "error", "reason": "no command provided"})
     resp = api.execute(cmd)

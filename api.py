@@ -2,7 +2,6 @@ import json
 import os, sys
 import logging
 import warnings
-import traceback
 from typing import (
     List, 
     Tuple, 
@@ -126,7 +125,7 @@ def execute(command: Dict[str, Any]) -> Dict[str, Any]:
             result = client.as_json(result, command.get("fields"))
             result["status"] = "success"
             return result
-        return {"status": "success", "response": str(result)}
+        return {"status": "success", "raw": str(result), "response": {}}
 
     except KeyError:
         return {"status": "error", "reason": "command missing key 'kwargs'"}
@@ -135,13 +134,15 @@ def execute(command: Dict[str, Any]) -> Dict[str, Any]:
         return {"status": "error", "reason": f"function {command['function']!r} not found"}
     
     except Exception as e:
-        tb = traceback.format_exc()
-        return {"status": "error", "reason": tb}
+        return {"status": "error", "reason": str(e)[0].lower() + str(e)[1:]}
 
-def execute_via_proxy(command: Dict[str, Any]) -> Dict[str, Any]:
-    proxyurl = "https://instagram-automation-sand.vercel.app/service"
+def execute_via_proxy(command: Dict[str, Any], localhost: bool = False) -> Dict[str, Any]:
+    if localhost:
+        proxyurl = "http://localhost:9102/service"
+    else:
+        proxyurl = "https://instagram-automation-sand.vercel.app/service"
     data = {"auth": os.getenv("PROXYSERVER_AUTH_KEY"), "command": command}
-    proxy_resp = requests.post(url=proxyurl, data=data)
+    proxy_resp = requests.post(url=proxyurl, json=data)
     if not proxy_resp.ok:
         raise Exception(
             "could not reach proxy server"
