@@ -104,7 +104,7 @@ def get_data(cmd: str, args: argparse.Namespace, use_proxy: bool) -> None:
         for u in user_chunk:
             if u not in users:
                 users.append(u)
-                
+
     print(f"found {len(users)} users")
     if api_cmd["kwargs"].get("self"):
         api_cmd["kwargs"].pop("self")
@@ -202,8 +202,9 @@ def main(argv: List[str]) -> int:
         from igscraper.proxyserver import app
         app.run(port=9102, debug=True)
 
-    if "--local" in argv:
+    elif "--local" in argv:
         return run_interactive(parser)
+
     args = parser.parse_args(argv[1:])
     try:
         process_args(parser, args, use_proxy=True)

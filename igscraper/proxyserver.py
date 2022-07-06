@@ -15,21 +15,20 @@ app = Flask(__name__)
 @app.route("/service", methods=["POST"])
 def service():
     """Service endpoint to forward directly to the Instagram API"""
-    auth = request.json.get("auth", None)
-    if auth != os.getenv("PROXYSERVER_AUTH_KEY"): # stored on the web server
-        return jsonify({"status": "error", "reason": "bad authorisation"})
     cmd = request.json.get("command", None)
     if cmd is None:
         return jsonify({"status": "error", "reason": "no command provided"})
-    resp = api.execute(cmd)
+    ip = request.remote_addr
+    client = api.clients.get(ip)
+    if client is None:
+        client = api.InstagramAPI()
+        api.clients[ip] = client
+    resp = api.execute(cmd, client)
     return jsonify({"status": "success", "api_response": resp})
 
 @app.route("/restart", methods=["POST"])
 def restart():
     """Endpoint to reset the API class state"""
-    auth = request.json.get("auth", None)
-    if auth != os.getenv("PROXYSERVER_AUTH_KEY"): # stored on the web server
-        return jsonify({"status": "error", "reason": "bad authorisation"})
     api.client = api.InstagramAPI()
     return jsonify({"status": "success", "api_response": {"status": "success"}})
 

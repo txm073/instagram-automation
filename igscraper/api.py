@@ -1,3 +1,4 @@
+import re
 import json
 import os, sys
 import logging
@@ -167,16 +168,17 @@ class InstagramAPI(Client):
             result[key] = self.as_json(val, rlevel=rlevel + 1)
         return result
 
+_default_client = InstagramAPI()
+clients: Dict[str, InstagramAPI] = {}
 
-client = InstagramAPI()
-
-def execute(command: Dict[str, Any]) -> Dict[str, Any]:
+def execute(command: Dict[str, Any], client: InstagramAPI = None) -> Dict[str, Any]:
     try:
         func, do_json = funcmap.get(command["function"], (None, False))
         assert func is not None
         kwargs = command["kwargs"]
-        kwargs["self"] = client
-        result = func(**kwargs)
+        if client is None:
+            client = _default_client
+        result = func(self=client, **kwargs)
         if do_json:
             result = {"response": result}
             result = client.as_json(result, command.get("fields"))
@@ -207,7 +209,7 @@ def execute_via_proxy(command: Dict[str, Any], localhost: bool = False, maxtries
             proxyurl += "/restart"
         else:
             proxyurl += "/service"
-        data = {"auth": os.getenv("PROXYSERVER_AUTH_KEY"), "command": command}
+        data = {"command": command}
         proxy_resp = requests.post(url=proxyurl, json=data)
         ok = proxy_resp.ok
         print(proxy_resp.status_code)
