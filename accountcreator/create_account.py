@@ -2,12 +2,15 @@ import os, sys
 import subprocess
 import zipfile
 import atexit
+import random
+import hashlib
+import string
+import time
 
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.ui import Select
-from selenium_stealth import stealth
 import requests
 
 
@@ -112,27 +115,41 @@ class WebScraper(webdriver.Chrome):
                     raise
 
 
-def _get_email_address():
+randomhash = lambda: hashlib.sha256(str(random.randint(1, 0xffffffff)).encode()).hexdigest()
+
+def randompwd(length=16):
+    rand = random.SystemRandom()
+    pwd = []
+    pwd.append(rand.choice(string.ascii_uppercase))
+    pwd.append(rand.choice(string.ascii_lowercase))
+    pwd.append(rand.choice(string.digits))
+    pwd.append(rand.choice(string.punctuation))
+    for i in range(length - 4):
+        pwd.append(rand.choice(rand.choice((string.ascii_letters, string.digits, string.punctuation))))
+    random.shuffle(pwd)
+    return "".join(pwd)
+
+def get_email_address(driver: WebScraper, handle: str):
+    driver.switch_to.window(handle)
+
+    elem = driver.wait(lambda: driver.find_element("id", "mail"))
+    while not "@" in elem.text:
+        print(elem.text)
+        elem = driver.wait(lambda: driver.find_element("id", "mail"))
+    
     return "nasem23368@jrvps.com"
 
-def create_bot_account(username, pwd):
+def create_account():
+    # Set up driver
     driver = WebScraper(visible=True)
-
-    stealth(
-        driver=driver,
-        user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.53 Safari/537.36',
-        languages=["en-US", "en"],
-        vendor="Google Inc.",
-        platform="Win32",
-        webgl_vendor="Intel Inc.",
-        renderer="Intel Iris OpenGL Engine",
-        fix_hairline=False,
-        run_on_insecure_origins=False,
-    )
-
     atexit.register(driver.quit)
     driver.get("https://www.instagram.com/accounts/emailsignup/")
+    handle1 = driver.current_window_handle
+    driver.execute_script('window.open("https://www.temp-mail.org")')
+    time.sleep(2)
     driver.delete_all_cookies()
+    handle2 = [h for h in driver.window_handles if h != handle1][0]
+
     try:
         denied = driver.XPATH("/html/body/div[1]/section/main/div/div/div[1]/div/div[6]/button")
         if "please wait a few minutes" in denied.text.lower():
@@ -141,11 +158,15 @@ def create_bot_account(username, pwd):
             )
     except NoSuchElementException:
         pass
+    
+    username = randomhash()[-10:]
+    pwd = randompwd()
+    email = get_email_address(driver, handle2)
 
     # Cookies
     driver.wait(lambda: driver.XPATH("/html/body/div[4]/div/div/button[1]")).click()
     # Email address
-    driver.wait(lambda: driver.find_element("name", "emailOrPhone")).send_keys(_get_email_address())
+    driver.wait(lambda: driver.find_element("name", "emailOrPhone")).send_keys(email)
     # Username
     driver.wait(lambda: driver.find_element("name", "username")).send_keys(username)
     # Password
@@ -159,6 +180,8 @@ def create_bot_account(username, pwd):
     driver.wait(lambda: driver.XPATH("/html/body/div[1]/section/main/div/div/div[1]/div/div[6]/button")).click()
 
     input("Continue...")
+    return "", ""
 
 if __name__ == "__main__":  
-    create_bot_account("hsahasjdaa", "0x369CF")
+    creds = create_account()
+    print(f"Username: {creds[0]}, password: {creds[1]}")

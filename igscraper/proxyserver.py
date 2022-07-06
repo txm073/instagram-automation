@@ -7,7 +7,8 @@ which will return a JSON response to the proxy server and back to the user
 
 from flask import Flask, request, jsonify
 import os, sys
-import api
+
+from igscraper import api
 
 app = Flask(__name__)
 

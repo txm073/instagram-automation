@@ -4,15 +4,21 @@ import getpass
 import shlex
 import json
 import time
+import random
 from pprint import pprint
 from typing import List, Dict, Any
+from dotenv import load_dotenv
 
-from tqdm import tqdm
-import api
+load_dotenv()
+from igscraper import api
 
 
-def _call(api_cmd: Dict[str, Any], use_proxy: bool, verbose: bool = False) -> Dict[str, Any]:
-    if verbose and api_cmd["function"] != "login":
+def _call(api_cmd: Dict[str, Any], use_proxy: bool, args: argparse.Namespace) -> Dict[str, Any]:
+    if args.random_delay:
+        time.sleep(random.randint(5, 20))
+    else:
+        time.sleep(args.delay)
+    if args.verbose and api_cmd["function"] != "login":
         print("api command:", api_cmd)
     if use_proxy:
         resp = api.execute_via_proxy(api_cmd, localhost=True)
@@ -33,7 +39,7 @@ def process_args(args: argparse.Namespace, use_proxy: bool = True) -> None:
         else:
             pwd = getpass.getpass("password: ")
         api_cmd = {"function": "login", "kwargs": {"username": username, "pwd": pwd}}
-        resp = _call(api_cmd, use_proxy, args.verbose)
+        resp = _call(api_cmd, use_proxy, args)
         raw_response = eval(resp["raw"])
         assert raw_response[0] == 0, raw_response[1]
         pprint(resp)
@@ -43,7 +49,7 @@ def process_args(args: argparse.Namespace, use_proxy: bool = True) -> None:
         if args.verbose:
             print(f"checking to see if {args.username!r} is private...")
         is_private_cmd = {"function": "userinfo", "kwargs": {"username": args.username}, "fields": ["is_private", "follower_count", "following_count"]}
-        userinfo = _call(is_private_cmd, use_proxy, args.verbose)
+        userinfo = _call(is_private_cmd, use_proxy, args)
         assert (not userinfo["response"]["is_private"] or args.username == api.client._auth_user), f"cannot get information: user {args.username!r} is private"
         
         if args.verbose:
@@ -53,7 +59,7 @@ def process_args(args: argparse.Namespace, use_proxy: bool = True) -> None:
         chunksize = int(total * 0.15) + 1
         if chunksize < 100:
             chunksize = 100
-        #print(f"{total=}, {chunksize=}, {remainder=}, {n_chunks=}")
+
         api_cmd = {"function": cmd, "kwargs": {"username": args.username, "amount": chunksize, "maxid": ""}}
         users = []
         maxid = ""
@@ -61,7 +67,7 @@ def process_args(args: argparse.Namespace, use_proxy: bool = True) -> None:
         while (maxid is not None):
             start = time.time()
             #print(f"chunk {i + 1} / {n_chunks}")
-            resp = _call(api_cmd, use_proxy, False)
+            resp = _call(api_cmd, use_proxy, args)
             maxid, user_chunk = resp["response"]
             actual_chunksize = len(user_chunk)
             n_chunks = total / actual_chunksize
@@ -72,10 +78,11 @@ def process_args(args: argparse.Namespace, use_proxy: bool = True) -> None:
                 print(f"received chunk {chunks}, estimated completetion time: {n_chunks * elapsed * (1 - chunks / n_chunks):2f}s")
             chunks += 1
         print("receiving remaining data...")
-        resp = _call(api_cmd, use_proxy, False)
+        resp = _call(api_cmd, use_proxy, args)
         _, user_chunk = resp["response"]
         users.extend(user_chunk)
         #print(len(users), total)
+        data = {"command": api_cmd, "target_user": userinfo, "users": users}
 
         if args.output:
             print(f"saving data to {args.output!r}")
@@ -110,6 +117,8 @@ def main(argv: List[str]) -> int:
     parser.add_argument("-o", "--output", action="store", nargs="?", metavar="<output-file>", help="pipe the output to a file")
     parser.add_argument("-v", "--verbose", action="store_true", help="display additional information")
     parser.add_argument("--show-pwd", action="store_true", help="show password as it is being inputted")
+    parser.add_argument("-d", "--delay", action="store", type=int, default=1, help="the delay between API calls (in seconds)")
+    parser.add_argument("--random-delay", action="store_true", help="add a random amount of delay between API calls")
 
     if "--local" in argv:
         return run_interactive(parser)

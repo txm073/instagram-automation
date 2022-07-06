@@ -1,1 +1,1 @@
-web: gunicorn create_account_herokuapp:app
+web: gunicorn accountcreator/create_account_herokuapp:app

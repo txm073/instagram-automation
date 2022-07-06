@@ -26,6 +26,10 @@ warnings.warn(
     "use of the Instagram v1 mobile API is not recommended as it is deprecated",
     DeprecationWarning
 )
+warnings.warn(
+    "use of this API may result in your account being temporarily banned", 
+    UserWarning
+)
 
 funcmap: Dict[str, Tuple[Callable, bool]] = {}
 
