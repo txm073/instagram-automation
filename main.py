@@ -122,7 +122,7 @@ def process_args(parser: argparse.ArgumentParser, args: argparse.Namespace, use_
     cmd = args.command[0].lower().strip()
     if cmd == "login":
         if args.credentials:
-            with open(args.credentials, "w") as f:
+            with open(args.credentials, "r") as f:
                 data = json.load(f)
             username = data["username"]
             pwd = data["password"]
