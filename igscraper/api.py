@@ -64,9 +64,13 @@ class InstagramAPI(Client):
 
     def __init__(self, *args, **kwargs) -> NoReturn:
         """Create user information cache file if it does not exist"""
+        self._cache_data = True
         if not os.path.exists("cache.json"):
-            with open("cache.json", "w") as f:
-                json.dump({"users": []}, f)
+            try:
+                with open("cache.json", "w") as f:
+                    json.dump({"users": []}, f)
+            except OSError as e:
+                self._cache_data = False
         super(InstagramAPI, self).__init__(*args, **kwargs)
 
     def get_uid(self, username: str) -> str:
@@ -78,6 +82,8 @@ class InstagramAPI(Client):
         return uid
 
     def _cache(self, obj: Dict[str, Any]) -> None:
+        if not self._cache_data:
+            return None
         if os.path.exists("cache.json"):
             with open("cache.json", "r") as f:
                 contents = json.load(f)
@@ -88,6 +94,8 @@ class InstagramAPI(Client):
             json.dump(contents, f, indent=2)
 
     def _lookup(self, value, by="uid") -> Union[None, Dict[str, Any]]:
+        if not self._cache_data:
+            return None
         if not os.path.exists("cache.json"):
             return None
         with open("cache.json", "r") as f:
