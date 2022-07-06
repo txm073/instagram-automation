@@ -196,6 +196,7 @@ def execute(command: Dict[str, Any]) -> Dict[str, Any]:
         return {"status": "error", "reason": str(e)[0].lower() + str(e)[1:]}
 
 def execute_via_proxy(command: Dict[str, Any], localhost: bool = False) -> Dict[str, Any]:
+    localhost = True
     if localhost:
         proxyurl = "http://localhost:9102"
     else:
@@ -206,6 +207,8 @@ def execute_via_proxy(command: Dict[str, Any], localhost: bool = False) -> Dict[
         proxyurl += "/service"
     data = {"auth": os.getenv("PROXYSERVER_AUTH_KEY"), "command": command}
     proxy_resp = requests.post(url=proxyurl, json=data)
+    print(proxy_resp.status_code)
+    print(proxy_resp.json())
     if not proxy_resp.ok:
         raise Exception(
             "could not reach proxy server"

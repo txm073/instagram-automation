@@ -194,6 +194,10 @@ def main(argv: List[str]) -> int:
     parser.add_argument("-c", "--credentials", action="store", type=str, metavar="<credentials>", nargs="?", help="JSON file storing login credentials")
     parser.add_argument("-p", "--proxy", action="store_true", help="indicate whether to run commands via a proxy server")
 
+    if "--runserver" in argv:
+        from igscraper.proxyserver import app
+        app.run(port=9102, debug=True)
+
     if "--local" in argv:
         return run_interactive(parser)
     args = parser.parse_args(argv[1:])
