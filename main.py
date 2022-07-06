@@ -90,7 +90,9 @@ def get_data(cmd: str, args: argparse.Namespace, use_proxy: bool) -> None:
             maxid, user_chunk = resp["response"]
             actual_chunksize = len(user_chunk)
             n_chunks = total / actual_chunksize
-            users.extend(user_chunk)
+            for u in user_chunk: 
+                if u not in users:
+                    users.append(u)
             api_cmd["kwargs"]["maxid"] = maxid
             elapsed = time.time() - start
             if actual_chunksize == chunksize:
@@ -99,8 +101,11 @@ def get_data(cmd: str, args: argparse.Namespace, use_proxy: bool) -> None:
         print("receiving remaining data...")
         resp = call(api_cmd, use_proxy, args)
         _, user_chunk = resp["response"]
-        users.extend(user_chunk)
-
+        for u in user_chunk:
+            if u not in users:
+                users.append(u)
+                
+    print(f"found {len(users)} users")
     if api_cmd["kwargs"].get("self"):
         api_cmd["kwargs"].pop("self")
     data = {"command": api_cmd, "target_user": userinfo, "users": users}
