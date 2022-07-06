@@ -15,7 +15,6 @@ future==0.18.2
 gunicorn==20.1.0
 h11==0.13.0
 idna==2.8
-igramscraper==0.3.2
 importlib-metadata==4.12.0
 instagrapi==1.16.20
 itsdangerous==2.1.2
