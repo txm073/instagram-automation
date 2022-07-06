@@ -116,7 +116,7 @@ def process_args(parser: argparse.ArgumentParser, args: argparse.Namespace, use_
         assert args.output.endswith(".json"), "output file must be JSON"
     if args.use_proxy:
         use_proxy = True
-        
+
     cmd = args.command[0].lower().strip()
     if cmd == "login":
         if args.credentials:
@@ -186,9 +186,9 @@ def main(argv: List[str]) -> int:
 
     if "--local" in argv:
         return run_interactive(parser)
-    args = parser.parse_args(parser, argv[1:])
+    args = parser.parse_args(argv[1:])
     try:
-        process_args(args, use_proxy=True)
+        process_args(parser, args, use_proxy=True)
     except Exception as e:
         print("error:", str(e))
         return 1
