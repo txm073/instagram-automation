@@ -196,7 +196,6 @@ def execute(command: Dict[str, Any]) -> Dict[str, Any]:
         return {"status": "error", "reason": str(e)[0].lower() + str(e)[1:]}
 
 def execute_via_proxy(command: Dict[str, Any], localhost: bool = False) -> Dict[str, Any]:
-    localhost = True
     if localhost:
         proxyurl = "http://localhost:9102"
     else:
