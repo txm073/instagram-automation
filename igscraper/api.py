@@ -139,6 +139,10 @@ class InstagramAPI(Client):
         self._auth_user = username
         return 0, "success"
 
+    @api_func("logout", jsonify=False)
+    def logout(self):
+        return super(InstagramAPI, self).logout()
+
     def as_json(self, obj: Any, fields: List[str] = None, rlevel: int = 0) -> Dict[str, Any]:
         """Form a JSON response to be returned through the proxy server"""
         if isinstance(obj, (set, tuple)):

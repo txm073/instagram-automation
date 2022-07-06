@@ -150,6 +150,10 @@ def process_args(parser: argparse.ArgumentParser, args: argparse.Namespace, use_
         print("exiting...")
         sys.exit(0)
 
+    elif cmd == "logout":
+        print("logging out...")
+        call({"function": "logout", "kwargs": {}}, use_proxy, args)
+
     else:
         raise Exception(
             f"invalid command {cmd!r}"
