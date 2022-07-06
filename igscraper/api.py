@@ -15,6 +15,7 @@ from typing import (
     NoReturn
 )
 from instagrapi import Client
+from instagrapi.exceptions import LoginRequired
 from instagrapi.types import User, UserShort
 import requests
 
@@ -134,6 +135,11 @@ class InstagramAPI(Client):
         self._auth_user = username
         return 0, "success"
 
+    @api_func("relogin")
+    def relogin(self) -> bool:
+        """Relogin using cached authorization information if a LoginRequired error is raised"""
+        return super(InstagramAPI, self).relogin()
+
     @api_func("logout", jsonify=False)
     def logout(self):
         return super(InstagramAPI, self).logout()
@@ -172,30 +178,37 @@ _default_client = InstagramAPI()
 clients: Dict[str, InstagramAPI] = {}
 
 def execute(command: Dict[str, Any], client: InstagramAPI = None) -> Dict[str, Any]:
-    try:
-        func, do_json = funcmap.get(command["function"], (None, False))
-        assert func is not None
-        kwargs = command["kwargs"]
-        if client is None:
-            client = _default_client
-        result = func(self=client, **kwargs)
-        if do_json:
-            result = {"response": result}
-            result = client.as_json(result, command.get("fields"))
-            result["status"] = "success"
-            return result
-        if isinstance(result, dict):
-            return {"status": "success", "response": result}
-        return {"status": "success", "raw": str(result), "response": {}}
+    login_success = False
+    attempts = 0
+    while not login_success and attempts < 3:
+        attempts += 1    
+        try:
+            func, do_json = funcmap.get(command["function"], (None, False))
+            assert func is not None
+            kwargs = command["kwargs"]
+            if client is None:
+                client = _default_client
+            result = func(self=client, **kwargs)
+            if do_json:
+                result = {"response": result}
+                result = client.as_json(result, command.get("fields"))
+                result["status"] = "success"
+                return result
+            if isinstance(result, dict):
+                return {"status": "success", "response": result}
+            return {"status": "success", "raw": str(result), "response": {}}
 
-    except KeyError:
-        return {"status": "error", "reason": "command missing key 'kwargs'"}
-    
-    except AssertionError:
-        return {"status": "error", "reason": f"function {command['function']!r} not found"}
-    
-    except Exception as e:
-        return {"status": "error", "reason": str(e)[0].lower() + str(e)[1:]}
+        except KeyError:
+            return {"status": "error", "reason": "command missing key 'kwargs'"}
+        
+        except AssertionError:
+            return {"status": "error", "reason": f"function {command['function']!r} not found"}
+        
+        except LoginRequired:
+            client.relogin()
+
+        except Exception as e:
+            return {"status": "error", "reason": str(e)[0].lower() + str(e)[1:]}
 
 def execute_via_proxy(command: Dict[str, Any], localhost: bool = False, maxtries: int = 5) -> Dict[str, Any]:
     tries = 0
@@ -212,7 +225,7 @@ def execute_via_proxy(command: Dict[str, Any], localhost: bool = False, maxtries
         data = {"command": command}
         proxy_resp = requests.post(url=proxyurl, json=data)
         ok = proxy_resp.ok
-        print(proxy_resp.status_code)
+        print("status code:", proxy_resp.status_code)
         tries += 1
     if not proxy_resp.ok:
         raise Exception(
