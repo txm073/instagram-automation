@@ -29,7 +29,9 @@ def service():
 @app.route("/restart", methods=["POST"])
 def restart():
     """Endpoint to reset the API class state"""
-    api.client = api.InstagramAPI()
+    client = api.clients.get(request.remote_addr)
+    if client is not None:
+        client[request.remote_addr] = InstagramAPI()
     return jsonify({"status": "success", "api_response": {"status": "success"}})
 
 @app.route("/", methods=["GET"])
