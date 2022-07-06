@@ -1,1 +1,0 @@
-web: gunicorn accountcreator/create_account_herokuapp:app

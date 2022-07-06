@@ -15,11 +15,8 @@ from typing import (
 )
 from instagrapi import Client
 from instagrapi.types import User, UserShort
-from pydantic import BaseModel
-from dotenv import load_dotenv
 import requests
 
-load_dotenv()
 logging.getLogger("instagrapi").disabled = True
 logging.getLogger("public_request").disabled = True
 warnings.warn(
@@ -107,15 +104,15 @@ class InstagramAPI(Client):
         return None
 
     @api_func("following")
-    def get_following_chunk(self, username: str, amount: int, maxid: str) -> Tuple[str, List[UserShort]]:
+    def get_following(self, username: str) -> List[UserShort]:
         """Get all the users that a specific user is following"""
         uid = self.get_uid(username)
-        users, max_id = super(InstagramAPI, self).user_following_v1(uid, amount, maxid)
-        return [max_id, list(users.values())]
+        users = super(InstagramAPI, self).user_following_v1(uid, 0)
+        return users
 
     @api_func("followers")
     def get_followers_chunk(self, username: str, amount: int, maxid: str) -> Tuple[str, List[UserShort]]:
-        """Get all the followers of a specific user"""
+        """Get the followers of a specific user"""
         uid = self.get_uid(username)
         users, max_id = super(InstagramAPI, self).user_followers_v1_chunk(uid, amount, maxid)
         return [max_id, users]
