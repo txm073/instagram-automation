@@ -114,7 +114,7 @@ def process_args(parser: argparse.ArgumentParser, args: argparse.Namespace, use_
     """Process the arguments entered by the user"""
     if args.output:
         assert args.output.endswith(".json"), "output file must be JSON"
-    if args.use_proxy:
+    if args.proxy:
         use_proxy = True
 
     cmd = args.command[0].lower().strip()
