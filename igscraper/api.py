@@ -195,19 +195,23 @@ def execute(command: Dict[str, Any]) -> Dict[str, Any]:
     except Exception as e:
         return {"status": "error", "reason": str(e)[0].lower() + str(e)[1:]}
 
-def execute_via_proxy(command: Dict[str, Any], localhost: bool = False) -> Dict[str, Any]:
-    if localhost:
-        proxyurl = "http://localhost:9102"
-    else:
-        proxyurl = "https://instagram-automation-sand.vercel.app"
-    if command["function"] == "reset":
-        proxyurl += "/restart"
-    else:
-        proxyurl += "/service"
-    data = {"auth": os.getenv("PROXYSERVER_AUTH_KEY"), "command": command}
-    proxy_resp = requests.post(url=proxyurl, json=data)
-    print(proxy_resp.status_code)
-    print(proxy_resp.json())
+def execute_via_proxy(command: Dict[str, Any], localhost: bool = False, maxtries: int = 5) -> Dict[str, Any]:
+    tries = 0
+    ok = False
+    while tries < maxtries and not ok:
+        if localhost:
+            proxyurl = "http://localhost:9102"
+        else:
+            proxyurl = "https://instagram-automation-sand.vercel.app"
+        if command["function"] == "reset":
+            proxyurl += "/restart"
+        else:
+            proxyurl += "/service"
+        data = {"auth": os.getenv("PROXYSERVER_AUTH_KEY"), "command": command}
+        proxy_resp = requests.post(url=proxyurl, json=data)
+        ok = proxy_resp.ok
+        print(proxy_resp.status_code)
+        tries += 1
     if not proxy_resp.ok:
         raise Exception(
             "could not reach proxy server"

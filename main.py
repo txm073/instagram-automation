@@ -148,13 +148,12 @@ def process_args(parser: argparse.ArgumentParser, args: argparse.Namespace, use_
         helpstr = parser.format_help()
         print(helpstr)
 
-    elif cmd == "reset":
+    elif cmd in ("reset", "exit"):
         print("resetting proxy server state...")
         call({"function": "reset"}, use_proxy, args)
-
-    elif cmd == "exit":
-        print("exiting...")
-        sys.exit(0)
+        if cmd == "exit":
+            print("exiting...")
+            sys.exit(0)
 
     elif cmd == "logout":
         print("logging out...")

@@ -31,7 +31,7 @@ def restart():
     if auth != os.getenv("PROXYSERVER_AUTH_KEY"): # stored on the web server
         return jsonify({"status": "error", "reason": "bad authorisation"})
     api.client = api.InstagramAPI()
-    return jsonify({"status": "success"})
+    return jsonify({"status": "success", "api_response": {"status": "success"}})
 
 @app.route("/", methods=["GET"])
 def index():
