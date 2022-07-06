@@ -21,7 +21,7 @@ def _call(api_cmd: Dict[str, Any], use_proxy: bool, args: argparse.Namespace) ->
     if args.verbose and api_cmd["function"] != "login":
         print("api command:", api_cmd)
     if use_proxy:
-        resp = api.execute_via_proxy(api_cmd, localhost=True)
+        resp = api.execute_via_proxy(api_cmd)
     else:
         resp = api.execute(api_cmd)
     assert resp["status"] == "success", resp["reason"]
