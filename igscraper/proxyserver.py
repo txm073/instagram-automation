@@ -12,7 +12,7 @@ from igscraper import api
 
 app = Flask(__name__)
 
-@app.route("/service", methods=["GET", "POST"])
+@app.route("/service", methods=["POST"])
 def service():
     """Service endpoint to forward directly to the Instagram API"""
     auth = request.json.get("auth", None)
@@ -23,6 +23,15 @@ def service():
         return jsonify({"status": "error", "reason": "no command provided"})
     resp = api.execute(cmd)
     return jsonify({"status": "success", "api_response": resp})
+
+@app.route("/restart", methods=["POST"])
+def restart():
+    """Endpoint to reset the API class state"""
+    auth = request.json.get("auth", None)
+    if auth != os.getenv("PROXYSERVER_AUTH_KEY"): # stored on the web server
+        return jsonify({"status": "error", "reason": "bad authorisation"})
+    api.client = api.InstagramAPI()
+    return jsonify({"status": "success"})
 
 @app.route("/", methods=["GET"])
 def index():

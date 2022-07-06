@@ -53,12 +53,6 @@ class InstagramAPI(Client):
     _auth_user: str = None
     _default_attribute = type("DefaultAttribute", (), {})
 
-    def __new__(cls, *args, **kwargs) -> Any:
-        """Method override to ensure that only one instance of the class is created"""
-        if cls._inst is None:
-            cls._inst = super(InstagramAPI, cls).__new__(cls, *args, **kwargs)
-        return cls._inst
-
     def __init__(self, *args, **kwargs) -> NoReturn:
         """Create user information cache file if it does not exist"""
         self._cache_data = True
@@ -203,9 +197,13 @@ def execute(command: Dict[str, Any]) -> Dict[str, Any]:
 
 def execute_via_proxy(command: Dict[str, Any], localhost: bool = False) -> Dict[str, Any]:
     if localhost:
-        proxyurl = "http://localhost:9102/service"
+        proxyurl = "http://localhost:9102"
     else:
-        proxyurl = "https://instagram-automation-sand.vercel.app/service"
+        proxyurl = "https://instagram-automation-sand.vercel.app"
+    if command["function"] == "reset":
+        proxyurl += "/restart"
+    else:
+        proxyurl += "/service"
     data = {"auth": os.getenv("PROXYSERVER_AUTH_KEY"), "command": command}
     proxy_resp = requests.post(url=proxyurl, json=data)
     if not proxy_resp.ok:

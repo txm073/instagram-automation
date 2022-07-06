@@ -17,6 +17,8 @@ def call(api_cmd: Dict[str, Any], use_proxy: bool, args: argparse.Namespace) -> 
         time.sleep(random.randint(5, 20))
     else:
         time.sleep(args.delay)
+    if not api_cmd.get("kwargs"):
+        api_cmd["kwargs"] = {}
     if args.verbose and api_cmd["function"] != "login":
         print("api command:", api_cmd)
     if use_proxy:
@@ -146,13 +148,17 @@ def process_args(parser: argparse.ArgumentParser, args: argparse.Namespace, use_
         helpstr = parser.format_help()
         print(helpstr)
 
+    elif cmd == "reset":
+        print("resetting proxy server state...")
+        call({"function": "reset"}, use_proxy, args)
+
     elif cmd == "exit":
         print("exiting...")
         sys.exit(0)
 
     elif cmd == "logout":
         print("logging out...")
-        call({"function": "logout", "kwargs": {}}, use_proxy, args)
+        call({"function": "logout"}, use_proxy, args)
 
     else:
         raise Exception(
