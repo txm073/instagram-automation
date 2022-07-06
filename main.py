@@ -114,19 +114,27 @@ def process_args(parser: argparse.ArgumentParser, args: argparse.Namespace, use_
     """Process the arguments entered by the user"""
     if args.output:
         assert args.output.endswith(".json"), "output file must be JSON"
-
+    if args.use_proxy:
+        use_proxy = True
+        
     cmd = args.command[0].lower().strip()
     if cmd == "login":
-        username = input("username: ")
-        if args.show_pwd:
-            pwd = input("password: ")
-        else:
-            pwd = getpass.getpass("password: ")
+        if args.credentials:
+            with open(args.credentials, "w") as f:
+                data = json.load(f)
+            username = data["username"]
+            pwd = data["password"]
+        else:    
+            username = input("username: ")
+            if args.show_pwd:
+                pwd = input("password: ")
+            else:
+                pwd = getpass.getpass("password: ")
         api_cmd = {"function": "login", "kwargs": {"username": username, "pwd": pwd}}
         resp = call(api_cmd, use_proxy, args)
         raw_response = eval(resp["raw"])
         assert raw_response[0] == 0, raw_response[1]
-        pprint(resp)
+        print(f"successfully logged in as {username!r}")
 
     elif cmd in ("following", "followers"):
         get_data(cmd, args, use_proxy)
