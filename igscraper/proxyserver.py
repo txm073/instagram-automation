@@ -31,7 +31,8 @@ def restart():
     """Endpoint to reset the API class state"""
     client = api.clients.get(request.remote_addr)
     if client is not None:
-        client[request.remote_addr] = api.InstagramAPI()
+        api.clients[request.remote_addr].logout()
+        api.clients[request.remote_addr] = api.InstagramAPI()
     return jsonify({"status": "success", "api_response": {"status": "success"}})
 
 @app.route("/", methods=["GET"])
