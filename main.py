@@ -8,10 +8,10 @@ import random
 from pprint import pprint
 from typing import List, Dict, Any
 
-from igscraper import api
+import api
 
 
-def call(api_cmd: Dict[str, Any], use_proxy: bool, args: argparse.Namespace) -> Dict[str, Any]:
+def call(api_cmd: Dict[str, Any], args: argparse.Namespace) -> Dict[str, Any]:
     """Call an API command either directly or via the proxy server"""
     if args.random_delay:
         time.sleep(random.randint(5, 20))
@@ -21,10 +21,7 @@ def call(api_cmd: Dict[str, Any], use_proxy: bool, args: argparse.Namespace) -> 
         api_cmd["kwargs"] = {}
     if args.verbose and api_cmd["function"] != "login":
         print("api command:", api_cmd)
-    if use_proxy:
-        resp = api.execute_via_proxy(api_cmd)
-    else:
-        resp = api.execute(api_cmd)
+    resp = api.execute(api_cmd)
     assert resp["status"] == "success", resp["reason"]
     return resp
 
@@ -56,13 +53,13 @@ def compare_users(args: argparse.Namespace) -> None:
     else:
         pprint(data)
 
-def get_data(cmd: str, args: argparse.Namespace, use_proxy: bool) -> None:
+def get_data(cmd: str, args: argparse.Namespace) -> None:
     """Fetch follower/following data from the API"""
     assert args.username, "provide a username"
     if args.verbose:
         print(f"checking to see if {args.username!r} is private...")
     is_private_cmd = {"function": "userinfo", "kwargs": {"username": args.username}, "fields": ["is_private", "follower_count", "following_count"]}
-    userinfo = call(is_private_cmd, use_proxy, args)
+    userinfo = call(is_private_cmd, args)
     assert (not userinfo["response"]["is_private"] or args.username == api.client._auth_user), f"cannot get information: user {args.username!r} is private"
     
     if args.verbose:
@@ -72,7 +69,7 @@ def get_data(cmd: str, args: argparse.Namespace, use_proxy: bool) -> None:
     if cmd == "following":
         api_cmd = {"function": "following", "kwargs": {"username": args.username}}
         # The data must be gathered all at once
-        users = call(api_cmd, use_proxy, args)["response"]
+        users = call(api_cmd, args)["response"]
     else:
         # User followers endpoint supports buffered requests
         total = int(userinfo["response"]["follower_count"])
@@ -86,7 +83,7 @@ def get_data(cmd: str, args: argparse.Namespace, use_proxy: bool) -> None:
         chunks = 1
         while (maxid is not None):
             start = time.time()
-            resp = call(api_cmd, use_proxy, args)
+            resp = call(api_cmd, args)
             maxid, user_chunk = resp["response"]
             actual_chunksize = len(user_chunk)
             n_chunks = total / actual_chunksize
@@ -99,7 +96,7 @@ def get_data(cmd: str, args: argparse.Namespace, use_proxy: bool) -> None:
                 print(f"received chunk {chunks}, estimated completetion time: {n_chunks * elapsed * (1 - chunks / n_chunks):2f}s")
             chunks += 1
         print("receiving remaining data...")
-        resp = call(api_cmd, use_proxy, args)
+        resp = call(api_cmd, args)
         _, user_chunk = resp["response"]
         for u in user_chunk:
             if u not in users:
@@ -108,7 +105,7 @@ def get_data(cmd: str, args: argparse.Namespace, use_proxy: bool) -> None:
     print(f"found {len(users)} users")
     if api_cmd["kwargs"].get("self"):
         api_cmd["kwargs"].pop("self")
-    data = {"command": api_cmd, "target_user": userinfo, "users": users}
+    data = {"command": api_cmd, "target_user": userinfo, "total": len(users), "users": users}
 
     if args.output:
         print(f"saving data to {args.output!r}")
@@ -117,12 +114,10 @@ def get_data(cmd: str, args: argparse.Namespace, use_proxy: bool) -> None:
     else:
         pprint(data, indent=2)
 
-def process_args(parser: argparse.ArgumentParser, args: argparse.Namespace, use_proxy: bool = True) -> None:
+def process_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
     """Process the arguments entered by the user"""
     if args.output:
         assert args.output.endswith(".json"), "output file must be JSON"
-    if args.proxy:
-        use_proxy = True
 
     cmd = args.command[0].lower().strip()
     if cmd == "login":
@@ -138,13 +133,13 @@ def process_args(parser: argparse.ArgumentParser, args: argparse.Namespace, use_
             else:
                 pwd = getpass.getpass("password: ")
         api_cmd = {"function": "login", "kwargs": {"username": username, "pwd": pwd}}
-        resp = call(api_cmd, use_proxy, args)
+        resp = call(api_cmd, args)
         raw_response = eval(resp["raw"])
         assert raw_response[0] == 0, raw_response[1]
         print(f"successfully logged in as {username!r}")
 
     elif cmd in ("following", "followers"):
-        get_data(cmd, args, use_proxy)
+        get_data(cmd, args)
 
     elif cmd == "compare":
         compare_users(args)
@@ -153,16 +148,10 @@ def process_args(parser: argparse.ArgumentParser, args: argparse.Namespace, use_
         helpstr = parser.format_help()
         print(helpstr)
 
-    elif cmd in ("reset", "exit"):
-        print("resetting proxy server state...")
-        call({"function": "reset"}, use_proxy, args)
-        if cmd == "exit":
-            print("exiting...")
-            sys.exit(0)
-
-    elif cmd == "logout":
+    elif cmd in ("logout", "exit"):
         print("logging out...")
-        call({"function": "logout"}, use_proxy, args)
+        call({"function": "logout"}, args)
+        sys.exit(0)
 
     else:
         raise Exception(
@@ -177,8 +166,9 @@ def run_interactive(parser: argparse.ArgumentParser) -> None:
             cmd = input("\n" + parser.prog + ">")
             argv = shlex.split(cmd)
             args = parser.parse_args(argv)
-            process_args(parser, args, use_proxy=False)
+            process_args(parser, args)
         except (EOFError, KeyboardInterrupt):
+            call({"function": "logout"}, argparse.Namespace(random_delay=None, delay=0, verbose=False))
             print("\nexiting...")
             break 
         except Exception as e:
@@ -197,20 +187,7 @@ def main(argv: List[str]) -> int:
     parser.add_argument("--compare-mode", action="store", type=str, metavar="<compare-mode>", choices=["only-first", "only-second", "both"], help="which way to compare two data files")
     parser.add_argument("-c", "--credentials", action="store", type=str, metavar="<credentials>", nargs="?", help="JSON file storing login credentials")
     parser.add_argument("-p", "--proxy", action="store_true", help="indicate whether to run commands via a proxy server")
-
-    if "--runserver" in argv:
-        from igscraper.proxyserver import app
-        app.run(port=9102, debug=True)
-
-    elif "--local" in argv:
-        return run_interactive(parser)
-
-    args = parser.parse_args(argv[1:])
-    try:
-        process_args(parser, args, use_proxy=True)
-    except Exception as e:
-        print("error:", str(e))
-        return 1
+    run_interactive(parser)
     return 0
 
 if __name__ == "__main__":

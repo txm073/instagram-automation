@@ -210,6 +210,7 @@ def execute(command: Dict[str, Any], client: InstagramAPI = None) -> Dict[str, A
         except Exception as e:
             return {"status": "error", "reason": str(e)[0].lower() + str(e)[1:]}
 
+"""
 def execute_via_proxy(command: Dict[str, Any], localhost: bool = False, maxtries: int = 5) -> Dict[str, Any]:
     tries = 0
     ok = False
@@ -239,3 +240,4 @@ def execute_via_proxy(command: Dict[str, Any], localhost: bool = False, maxtries
     else:
         api_resp = json_resp["api_response"]
         return api_resp
+"""

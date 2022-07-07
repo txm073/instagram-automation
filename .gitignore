@@ -6,3 +6,4 @@ data/*
 *.spec
 .vercel
 cache.json
+creds.json
