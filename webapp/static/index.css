@@ -8,6 +8,7 @@
 body {
   font-family: "Raleway", sans-serif;
   background-color: var(--bg-color);
+  overflow-y: hidden;
 }
 
 .centered {
@@ -16,10 +17,16 @@ body {
 
 .title {
   padding: 5px 0;
+  margin-bottom: 5%;
 }
 
 div.page-content {
-  margin: 5% 20%;
+  margin: 5vh 20vw;
+  width: 60vw;
+  height: 90vh;
+  border-radius: 10px;
+  background-color: var(--shaded);
+  border: 2px solid var(--accent);
 }
 
 ul.vertical-list, ul.horizontal-list {
@@ -52,23 +59,41 @@ input#user-input {
   outline: none;
   border: 2px solid var(--accent);
   border-radius: 5px;
-  width: 50%;
+  width: calc(46% - 5px);
   font-size: 14px;
   height: 5vh;
-  background-color: var(--shaded);
-  margin: 0 25%;
+  background-color: white;
+  margin: 0 27%;
   text-align: center;
 }
 
 button.command-btn {
   border-radius: 5px;
   border: 2px solid var(--accent);
-  padding: 5px 10px;
+  font-size: 16px;
+  padding: 8px 20px;
+  background-color: white;
+  cursor: pointer;
+}
+
+button.command-btn:hover {
+  background-color: var(--shaded);
 }
 
 ul.follow-btns {
   width: 50%;
   margin: 0 25%;
+  position: relative;
+}
+
+ul.follow-btns li .followers-btn {
+  position: absolute;
+  right: 10%;
+}
+
+ul.follow-btns li .following-btn {
+  position: absolute;
+  left: 10%;
 }
 
 .horizontal-center {
@@ -79,6 +104,13 @@ ul.follow-btns {
 .no-pad {
   padding: none;
   margin: none;
+}
+
+li.info-heading-row {
+  width: 100%;
+  text-align: center;
+  margin-top: 10%;
+  visibility: hidden;
 }
 
 .red {

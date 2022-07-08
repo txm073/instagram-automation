@@ -8,8 +8,7 @@ import random
 from pprint import pprint
 from typing import List, Dict, Any
 
-import api
-
+from webapp import api
 
 def call(api_cmd: Dict[str, Any], args: argparse.Namespace) -> Dict[str, Any]:
     """Call an API command either directly or via the proxy server"""
