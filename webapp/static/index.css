@@ -1,0 +1,94 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@200&family=Raleway:wght@100;300&display=swap");
+
+:root {
+  --accent: rgb(92, 20, 144);
+  --shaded: rgb(231, 230, 230);
+}
+
+body {
+  font-family: "Raleway", sans-serif;
+  background-color: var(--bg-color);
+}
+
+.centered {
+  text-align: center;
+}
+
+.title {
+  padding: 5px 0;
+}
+
+div.page-content {
+  margin: 5% 20%;
+}
+
+ul.vertical-list, ul.horizontal-list {
+  padding: 0;
+  margin: 0;
+}
+
+ul.vertical-list li {
+  display: block;
+}
+
+ul.horizontal-list li {
+  display: inline-block;
+}
+
+li.btn-list-element {
+  height: 3vw;
+}
+
+button.settings-btn {
+  cursor: pointer;
+  float: right;
+  width: 3vw;
+  height: 3vw;
+  border-radius: 1.5vw;
+  border: 2px solid var(--accent);
+}
+
+input#user-input {
+  outline: none;
+  border: 2px solid var(--accent);
+  border-radius: 5px;
+  width: 50%;
+  font-size: 14px;
+  height: 5vh;
+  background-color: var(--shaded);
+  margin: 0 25%;
+  text-align: center;
+}
+
+button.command-btn {
+  border-radius: 5px;
+  border: 2px solid var(--accent);
+  padding: 5px 10px;
+}
+
+ul.follow-btns {
+  width: 50%;
+  margin: 0 25%;
+}
+
+.horizontal-center {
+  margin: 0 25%;
+  width: 50%;
+}
+
+.no-pad {
+  padding: none;
+  margin: none;
+}
+
+.red {
+  background-color:red;
+}
+
+.green {
+  background-color:green;
+}
+
+.blue {
+  background-color:blue;
+}
