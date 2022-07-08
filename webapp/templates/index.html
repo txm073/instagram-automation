@@ -18,17 +18,16 @@
           <h1 class="centered title no-pad">Instagram Account Scraper</h1>
         </li>
         <li>
-          <input type="text" id="user-input" placeholder="Enter Username...">
+          <input type="text" id="user-input" placeholder="Enter username...">
         </li>
-        <li style="padding: 10px 0;">
-          <ul class="follow-btns horizontal-list">
-            <li><button class="command-btn followers-btn" onclick="getData('followers')">Followers</button></li>
-            <li><button class="command-btn following-btn" onclick="getData('following')">Following</button></li>
-          </ul>
+        <li>
+          <button class="command-btn followers-btn" onclick="getData('followers')">Followers</button>
+          <button class="command-btn following-btn" onclick="getData('following')">Following</button>
         </li>
         <li class="info-heading-row green">
-          <h2  id="info-heading">Nothing to fetch yet.</h2 >
+          <h2 id="info-heading">Nothing to fetch yet.</h2>
         </li>
+        <div class="loader"></div>
       </ul>
     </div>
   </body>

@@ -7,8 +7,10 @@
 
 body {
   font-family: "Raleway", sans-serif;
-  background-color: var(--bg-color);
+  background-color: var(--shaded);
   overflow-y: hidden;
+  padding: 0;
+  margin: 0;
 }
 
 .centered {
@@ -17,17 +19,35 @@ body {
 
 .title {
   padding: 5px 0;
-  margin-bottom: 5%;
+  margin-bottom: 20px;
 }
 
-div.page-content {
-  margin: 5vh 20vw;
-  width: 60vw;
-  height: 90vh;
-  border-radius: 10px;
-  background-color: var(--shaded);
-  border: 2px solid var(--accent);
+@media only screen and (min-width: 950px) {
+  div.page-content {
+    position: fixed;
+    margin: 0 20vw;
+    padding: 0;
+    height: 100vh;
+    width: 60vw;
+    background-color: white;
+    border-left: 2px solid var(--accent);
+    border-right: 2px solid var(--accent);
+  }
 }
+
+@media only screen and (max-width: 949px) {
+  div.page-content {
+    position: fixed;
+    margin: 0 10vw;
+    padding: 0;
+    height: 100vh;
+    width: 80vw;
+    background-color: white;
+    border-left: 2px solid var(--accent);
+    border-right: 2px solid var(--accent);
+  }
+}
+
 
 ul.vertical-list, ul.horizontal-list {
   padding: 0;
@@ -58,7 +78,7 @@ button.settings-btn {
 input#user-input {
   outline: none;
   border: 2px solid var(--accent);
-  border-radius: 5px;
+  border-radius: 8px;
   width: calc(46% - 5px);
   font-size: 14px;
   height: 5vh;
@@ -68,10 +88,10 @@ input#user-input {
 }
 
 button.command-btn {
-  border-radius: 5px;
+  border-radius: 8px;
   border: 2px solid var(--accent);
   font-size: 16px;
-  padding: 8px 20px;
+  padding: 10px 20px;
   background-color: white;
   cursor: pointer;
 }
@@ -80,20 +100,18 @@ button.command-btn:hover {
   background-color: var(--shaded);
 }
 
-ul.follow-btns {
-  width: 50%;
-  margin: 0 25%;
-  position: relative;
+button.followers-btn {
+  margin: 10px 0;
+  position: absolute;
+  left: 27%;
+  width: 22%;
 }
 
-ul.follow-btns li .followers-btn {
+button.following-btn {
+  margin: 10px 0;
   position: absolute;
-  right: 10%;
-}
-
-ul.follow-btns li .following-btn {
-  position: absolute;
-  left: 10%;
+  right: calc(27% - 3px);
+  width: 22%;
 }
 
 .horizontal-center {
@@ -123,4 +141,18 @@ li.info-heading-row {
 
 .blue {
   background-color:blue;
+}
+
+.loader {
+  border: 16px solid var(--shaded); 
+  border-top: 16px solid var(--accent); 
+  border-radius: 50%;
+  width: 5vw;
+  height: 5vw;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
